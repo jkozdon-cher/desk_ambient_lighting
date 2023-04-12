@@ -1,9 +1,28 @@
+import customtkinter as ctk
 import tkinter as tk
-from tkinter import ttk
 from uart_comm import *
 
 
-class LightControl(ttk.Frame):
+class App(ctk.CTk):
+    """
+        Class with main application window
+    """
+    def __init__(self):
+        super().__init__()
+
+        self.title('Desk ambient lighting')
+
+        self.screen_width = self.winfo_screenwidth()
+        self.screen_height = self.winfo_screenheight()
+        self.right_position = int((self.screen_width / 2) - 220)
+        self.down_position = int((self.screen_height / 2) - 220)
+        self.geometry(f'500x300+{self.right_position}+{self.down_position}')
+
+
+class LightControl(ctk.CTkFrame):
+    """
+        Class with all the equipment and methods for lighting control
+    """
     def __init__(self, container):
         super().__init__(container)
 
@@ -15,126 +34,216 @@ class LightControl(ttk.Frame):
         self.green = tk.DoubleVar()
         self.val = tk.DoubleVar()
         self.last_message = ''
-        self.bottom_width = 12
+        self.message = ''
+        self.red_color = 0
+        self.green_color = 0
+        self.blue_color = 0
+        self.bottom_width = 110
+        self.slider_height = 120
 
         self.arduino = ArduinoSerial.set_serial()
 
-        tk.Button(self,
-                  text='RED',
-                  width=self.bottom_width,
-                  bg='red',
-                  command=lambda: self.set_colors(255, 0, 0)
-                  ).grid(column=0, row=1)
+        ctk.CTkButton(self,
+                      text='RED',
+                      width=self.bottom_width,
+                      fg_color='red',
+                      hover_color='darkred',
+                      command=lambda: self.set_sliders(255, 0, 0)
+                      ).grid(column=0, row=1)
 
-        tk.Button(self,
-                  text='GREEN',
-                  width=self.bottom_width,
-                  bg='green',
-                  command=lambda: self.set_colors(0, 255, 0)
-                  ).grid(column=1, row=1)
+        ctk.CTkButton(self,
+                      text='GREEN',
+                      width=self.bottom_width,
+                      fg_color='green',
+                      hover_color='darkgreen',
+                      command=lambda: self.set_sliders(0, 255, 0)
+                      ).grid(column=1, row=1)
 
-        tk.Button(self,
-                  text='BLUE',
-                  width=self.bottom_width,
-                  bg='blue',
-                  fg='white',
-                  command=lambda: self.set_colors(0, 0, 255)
-                  ).grid(column=2, row=1)
+        ctk.CTkButton(self,
+                      text='BLUE',
+                      width=self.bottom_width,
+                      fg_color='blue',
+                      hover_color='darkblue',
+                      command=lambda: self.set_sliders(0, 0, 255)
+                      ).grid(column=2, row=1)
 
-        tk.Button(self,
-                  text='COLD WHITE',
-                  width=self.bottom_width,
-                  bg='white',
-                  command=lambda: self.set_colors(244, 253, 255)
-                  ).grid(column=3, row=0)
+        ctk.CTkButton(self,
+                      text='COLD WHITE',
+                      width=self.bottom_width,
+                      fg_color='white',
+                      hover_color='lightgray',
+                      text_color='black',
+                      command=lambda: self.set_sliders(244, 253, 255)
+                      ).grid(column=3, row=0)
 
-        tk.Button(self,
-                  text='WARM WHITE',
-                  width=self.bottom_width,
-                  bg='white',
-                  command=lambda: self.set_colors(243, 231, 211)
-                  ).grid(column=3, row=1)
+        ctk.CTkButton(self,
+                      text='WARM WHITE',
+                      width=self.bottom_width,
+                      fg_color='white',
+                      hover_color='lightgray',
+                      text_color='black',
+                      command=lambda: self.set_sliders(243, 231, 211)
+                      ).grid(column=3, row=1)
 
-        tk.Button(self,
-                  text='YELLOW',
-                  width=self.bottom_width,
-                  bg='yellow',
-                  command=lambda: self.set_colors(255, 255, 0)
-                  ).grid(column=3, row=2, sticky=tk.N)
+        ctk.CTkButton(self,
+                      text='YELLOW',
+                      width=self.bottom_width,
+                      fg_color='yellow',
+                      hover_color='lightgray',
+                      text_color='black',
+                      command=lambda: self.set_sliders(255, 255, 0)
+                      ).grid(column=3, row=2, sticky=tk.N)
 
-        tk.Button(self,
-                  text='ON',
-                  width=self.bottom_width,
-                  bg='white',
-                  command=lambda: self.turn_on()
-                  ).grid(column=3, row=2, sticky=tk.S)
+        ctk.CTkButton(self,
+                      text='ON',
+                      width=self.bottom_width,
+                      fg_color='white',
+                      hover_color='lightgray',
+                      text_color='black',
+                      command=lambda: self.turn_on()
+                      ).grid(column=3, row=2, sticky=tk.S)
 
-        tk.Button(self,
-                  text='OFF',
-                  width=self.bottom_width,
-                  bg='black',
-                  fg='white',
-                  command=lambda: self.turn_off()
-                  ).grid(column=3, row=3, sticky=tk.N)
+        ctk.CTkButton(self,
+                      text='OFF',
+                      width=self.bottom_width,
+                      fg_color='black',
+                      hover_color='gray',
+                      text_color='lightgray',
+                      command=lambda: self.turn_off()
+                      ).grid(column=3, row=3, sticky=tk.N)
 
-        self.red_scale = tk.Scale(self, variable=self.red, from_=255, to=0, troughcolor='red',
-                                  command=self.get_color_value)
+        self.red_scale = ctk.CTkSlider(self,
+                                       variable=self.red,
+                                       from_=0,
+                                       to=255,
+                                       height=120,
+                                       fg_color='darkred',
+                                       progress_color='red',
+                                       orientation='vertical',
+                                       command=self.set_colors)
         self.red_scale.grid(column=0, row=2)
 
-        self.green_scale = tk.Scale(self, variable=self.green, from_=255, to=0, troughcolor='green',
-                                    command=self.get_color_value)
+        self.green_scale = ctk.CTkSlider(self,
+                                         variable=self.green,
+                                         from_=0,
+                                         to=255,
+                                         height=self.slider_height,
+                                         fg_color='darkgreen',
+                                         progress_color='green',
+                                         orientation='vertical',
+                                         command=self.set_colors)
         self.green_scale.grid(column=1, row=2)
 
-        self.blue_scale = tk.Scale(self, variable=self.blue, from_=255, to=0, troughcolor='blue',
-                                   command=self.get_color_value)
+        self.blue_scale = ctk.CTkSlider(self,
+                                        variable=self.blue,
+                                        from_=0,
+                                        to=255,
+                                        height=self.slider_height,
+                                        fg_color='darkblue',
+                                        progress_color='blue',
+                                        orientation='vertical',
+                                        command=self.set_colors)
         self.blue_scale.grid(column=2, row=2)
 
-        self.brightness_scale = tk.Scale(self, variable=self.val, from_=5, to=255, command=self.get_color_value,
-                                         orient=tk.HORIZONTAL)
-        self.brightness_scale.grid(column=1, row=3)
+        self.brightness_scale = ctk.CTkSlider(self,
+                                              variable=self.val,
+                                              from_=5,
+                                              to=255,
+                                              width=self.slider_height,
+                                              fg_color='gray',
+                                              progress_color='lightgray',
+                                              orientation='horizontal',
+                                              command=self.set_colors)
+        self.brightness_scale.grid(column=1, row=4)
 
-        bright_label = tk.Label(self, text='BRIGHTNESS')
-        bright_label.grid(column=0, row=3)
+        bright_label = ctk.CTkLabel(self, text='BRIGHTNESS')
+        bright_label.grid(column=0, row=4)
 
-        self.grid(padx=20, pady=20, sticky=tk.NSEW)
+        self.error_label = ctk.CTkLabel(self, text='', text_color='red')
+        self.error_label.grid(column=1, row=5)
 
-    def set_colors(self, *values):
+        self.grid(padx=25, pady=20, sticky=tk.NSEW)
+
+    def set_sliders(self, *values):
+        """
+            Method for setting sliders in the right position
+        Parameters
+        ----------
+        values: int
+            Values corresponding to the colors in order: red, green, blue
+        Returns
+        -------
+
+        """
         self.red_scale.set(values[0])
         self.green_scale.set(values[1])
         self.blue_scale.set(values[2])
+        self.set_colors(0)
 
-    # def set_brightness(value):
-    #     brightness_scale.set(value)
+    def set_colors(self, value):
+        """
+            Method for setting variables storing color values including brightness
+        Parameters
+        ----------
+        value
+            Empty argument for proper operation of the function called by the slider
+        Returns
+        -------
 
-    def get_color_value(self, value):
-        red_color = int(self.red.get() * self.brightness_scale.get() / 255)
-        green_color = int(self.green.get() * self.brightness_scale.get() / 255)
-        blue_color = int(self.blue.get() * self.brightness_scale.get() / 255)
+        """
+        self.red_color = int(self.red.get() * self.brightness_scale.get() / 255)
+        self.green_color = int(self.green.get() * self.brightness_scale.get() / 255)
+        self.blue_color = int(self.blue.get() * self.brightness_scale.get() / 255)
+        self._create_message()
 
-        message = f'{red_color},{green_color},{blue_color}\n'
+    def _create_message(self):
+        """
+            Method that generates a message that will be sent via uart to the arduino driver
+        Returns
+        -------
+
+        """
+        message = f'{self.red_color},{self.green_color},{self.blue_color}\n'
         if self.last_message != message:
-            print(message)
+            # print(message)
             self.last_message = message
-            self.arduino.write(message.encode())
+            self._send_message(message)
 
     def turn_on(self):
-        self.arduino.write(self.last_message.encode())
+        """
+            Method that sends the last saved message
+        Returns
+        -------
+
+        """
+        self._send_message(self.last_message)
 
     def turn_off(self):
-        self.arduino.write('0,0,0\n'.encode())
+        """
+            Method that send message to turn off all LEDs (0, 0, 0)
+        Returns
+        -------
 
+        """
+        self._send_message('0,0,0\n')
 
-class App(tk.Tk):
-    def __init__(self):
-        super().__init__()
+    def _send_message(self, message):
+        """
+            Method for sending message to arduino. If the arduino is not connected, an appropriate message
+            will appear in the application
+        Parameters
+        ----------
+        message: str
+            Message containing information on what values to set the appropriate color channels with
+        Returns
+        -------
 
-        self.title('Desk ambient lighting')
-
-        self.screen_width = self.winfo_screenwidth()
-        self.screen_height = self.winfo_screenheight()
-        self.right_position = int((self.screen_width / 2) - 220)
-        self.down_position = int((self.screen_height / 2) - 220)
-        self.geometry(f'440x300+{self.right_position}+{self.down_position}')
+        """
+        try:
+            self.arduino.write(message.encode())
+            self.error_label.configure(text='')
+        except AttributeError:
+            self.error_label.configure(text="I can't find an arduino")
 
 
 if __name__ == '__main__':
